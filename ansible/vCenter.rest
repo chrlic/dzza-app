@@ -1,0 +1,25 @@
+method: POST
+url: https://localhost:9443/api/node/mo/uni/vmmp-VMware/dom-DZZA_switch.json
+payload{"vmmDomP":{"attributes":{"dn":"uni/vmmp-VMware/dom-DZZA_switch","name":"DZZA_switch","enableTag":"true","enableVmFolder":"true","rn":"dom-DZZA_switch","status":"created"},"children":[{"infraRsVlanNs":{"attributes":{"tDn":"uni/infra/vlanns-[Event_VLAN_Pool]-dynamic","status":"created"},"children":[]}},{"vmmUsrAccP":{"attributes":{"dn":"uni/vmmp-VMware/dom-DZZA_switch/usracc-event_vcenter","name":"event_vcenter","usr":"administrator@vsphere.local","pwd":"Passw0rd.","rn":"usracc-event_vcenter","status":"created"},"children":[]}},{"vmmVSwitchPolicyCont":{"attributes":{"dn":"uni/vmmp-VMware/dom-DZZA_switch/vswitchpolcont","status":"created,modified"},"children":[]}}]}}
+response: {"totalCount":"0","imdata":[]}
+timestamp: 09:30:56 DEBUG 
+
+method: POST
+url: https://localhost:9443/api/node/mo/uni/infra/attentp-Event_HX_ACI.json
+payload{"infraRsDomP":{"attributes":{"tDn":"uni/vmmp-VMware/dom-DZZA_switch","status":"created,modified"},"children":[]}}
+response: {"totalCount":"0","imdata":[]}
+
+method: POST
+url: https://localhost:9443/api/node/mo/uni/vmmp-VMware/dom-DZZA_switch/ctrlr-event_vCenter.json
+payload{"vmmCtrlrP":{"attributes":{"dn":"uni/vmmp-VMware/dom-DZZA_switch/ctrlr-event_vCenter","name":"event_vCenter","hostOrIp":"192.168.180.50","rootContName":"DCEvent","statsMode":"enabled","rn":"ctrlr-event_vCenter","status":"created"},"children":[{"vmmRsAcc":{"attributes":{"tDn":"uni/vmmp-VMware/dom-DZZA_switch/usracc-event_vcenter","status":"created"},"children":[]}}]}}
+response: {"totalCount":"0","imdata":[]}
+
+-- delete 
+method: DELETE
+url: https://localhost:9443/api/node/mo/uni/vmmp-VMware/dom-DZZA_switch.json
+response: {"totalCount":"1","imdata":[]}
+
+method: POST
+url: https://localhost:9443/api/node/mo/uni/infra/attentp-Event_HX_ACI/rsdomP-[uni/vmmp-VMware/dom-DZZA_switch].json
+payload{"infraRsDomP":{"attributes":{"dn":"uni/infra/attentp-Event_HX_ACI/rsdomP-[uni/vmmp-VMware/dom-DZZA_switch]","status":"deleted"},"children":[]}}
+response: {"totalCount":"0","imdata":[]}

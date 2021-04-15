@@ -1,0 +1,24 @@
+{
+  "vmmCtrlrP": {
+    "attributes": {
+      "dn": "uni/vmmp-VMware/dom-{{vmmSwitchName}}/ctrlr-{{vmmName}}",
+      "name": "{{vmmName}}",
+      "hostOrIp": "{{vmmHostname}}",
+      "rootContName": "{{vmmDatacenter}}",
+      "statsMode": "enabled",
+      "rn": "ctrlr-{{vmmName}}",
+      "status": "created,modified"
+    },
+    "children": [
+      {
+        "vmmRsAcc": {
+          "attributes": {
+            "tDn": "uni/vmmp-VMware/dom-{{vmmSwitchName}}/usracc-{{vmmCredentials}}",
+            "status": "created,modified"
+          },
+          "children": []
+        }
+      }
+    ]
+  }
+}

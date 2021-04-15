@@ -1,0 +1,133 @@
+#- hosts: aci
+#  gather_facts: no
+
+  #vars
+  # apic - APIC hostname
+  # port - APIC port
+  # user - APIC username
+  # password - APIC password
+  # tenant - Tenant
+  # vrf - VRF
+  # bd - Bridge Domain
+  # ap - Application Profile
+  # epg - EPG
+  # physDom - physical domain
+  # virtDom - virtual domain
+  # vlan - VLAN on uplink
+  # leaf1 - uplink leaves
+  # pod1 - pod ID
+  # interface1 - Interface
+  # leaf2 - uplink leaves
+  # pod2 - pod ID
+  # interface2 - Interface
+
+  #tasks:
+  - name: "Add Bridge Domain {{i_bd}}"
+    cisco.aci.aci_bd:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      bd: "{{i_bd}}"
+      vrf: "{{i_vrf}}"
+      state: present
+
+  - name: "Add a new AP {{i_ap}}"
+    cisco.aci.aci_ap:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      description: "HX Application profile {{i_ap}}"
+      monitoring_policy: default
+      state: present
+
+  - name: "Add a new EPG {{i_epg}}"
+    cisco.aci.aci_epg:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      description: "EPG {{i_epg}}"
+      bd: "{{i_bd}}"
+      monitoring_policy: default
+      preferred_group: yes
+      state: present
+
+  - name: "Add a new physical domain to EPG binding {{i_physDom}}"
+    cisco.aci.aci_epg_to_domain:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      domain: "{{i_physDom}}"
+      domain_type: phys
+      state: present
+
+  - name: "Add a new virtual domain to EPG binding {{i_virtDom}}"
+    cisco.aci.aci_epg_to_domain:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      domain: "{{i_virtDom}}"
+      domain_type: vmm
+      vm_provider: vmware
+      state: present
+
+  # setup uplinks for management to the HX domain
+  - name: "Add Uplink {{i_interface1}} to {{i_tenant}}/{{i_ap}}/{{i_epg}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      encap_id: "{{i_vlan}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      leafs: "{{i_leaf1}}"
+      pod_id: "{{i_pod1}}"
+      interface: "{{i_interface1}}"
+      state: present
+
+  # setup uplinks for management to the HX domain
+  - name: "Add Uplink {{i_interface2}} to {{i_tenant}}/{{i_ap}}/{{i_epg}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      encap_id: "{{i_vlan}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      leafs: "{{i_leaf2}}"
+      pod_id: "{{i_pod2}}"
+      interface: "{{i_interface2}}"
+      state: present

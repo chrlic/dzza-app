@@ -1,0 +1,45 @@
+{
+  "vmmDomP": {
+    "attributes": {
+      "dn": "uni/vmmp-VMware/dom-{{vmmSwitchName}}",
+      "name": "{{vmmSwitchName}}",
+      "enableTag": "true",
+      "enableVmFolder": "true",
+      "rn": "dom-{{vmmSwitchName}}",
+      "status": "created,modified"
+    },
+    "children": [
+      {
+        "infraRsVlanNs": {
+          "attributes": {
+            "tDn": "uni/infra/vlanns-[{{vmmVlanPool}}]-dynamic",
+            "status": "created,modified"
+          },
+          "children": []
+        }
+      },
+      {
+        "vmmUsrAccP": {
+          "attributes": {
+            "dn": "uni/vmmp-VMware/dom-{{vmmSwitchName}}/usracc-{{vmmCredentials}}",
+            "name": "{{vmmCredentials}}",
+            "usr": "{{vmmUsername}}",
+            "pwd": "{{vmmPassword}}",
+            "rn": "usracc-{{vmmCredentials}}",
+            "status": "created,modified"
+          },
+          "children": []
+        }
+      },
+      {
+        "vmmVSwitchPolicyCont": {
+          "attributes": {
+            "dn": "uni/vmmp-VMware/dom-{{vmmSwitchName}}/vswitchpolcont",
+            "status": "created,modified"
+          },
+          "children": []
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,323 @@
+- hosts: aci
+  gather_facts: no
+
+  tasks:
+  - name: "Add a Tenant {{tenant}}"
+    cisco.aci.aci_tenant:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{tenant}}"
+      description: "{{tenant}} created via Ansible"
+      validate_certs: False
+      state: present
+
+  - name: Add a new default VRF
+    cisco.aci.aci_vrf:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      vrf: "{{vrf}}"
+      description: "Customer {{customerName}} VRF"
+      validate_certs: False
+
+  - name: "Add a {{defaultBD}} BD"
+    cisco.aci.aci_bd:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      bd: "{{defaultBD}}"
+      vrf: "{{vrf}}"
+      validate_certs: False
+    delegate_to: localhost
+
+  - name: "Add subnet {{defaultSubnet}}/{{defaultSubnetMask}} to {{defaultBD}}"
+    cisco.aci.aci_bd_subnet:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      bd: "{{defaultBD}}"
+      gateway: "{{defaultSubnet}}"
+      mask: "{{defaultSubnetMask}}"
+      validate_certs: False
+    delegate_to: localhost
+
+  - name: "Add a customers default application policy"
+    cisco.aci.aci_ap:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      ap: "{{applicationPolicy}}"
+      description: default AP
+      monitoring_policy: default
+      state: present
+      validate_certs: False
+    delegate_to: localhost
+
+  - name: "Add a customers default EPG for default subnet"
+    cisco.aci.aci_epg:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      ap: "{{applicationPolicy}}"
+      epg: "{{defaultEPG}}"
+      description: Default EPG
+      bd: "{{defaultBD}}"
+      monitoring_policy: default
+      preferred_group: yes
+      state: present
+      validate_certs: False
+    delegate_to: localhost
+
+  - name: "Attach Physical Domain to EPG"
+    cisco.aci.aci_epg_to_domain:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      ap: "{{applicationPolicy}}"
+      epg: "{{defaultEPG}}"
+      domain: "{{physicalDomain}}"
+      domain_type: phys
+      state: present
+      validate_certs: False
+    delegate_to: localhost
+
+  - name: "Attach VMM vSphere Domain to EPG"
+    cisco.aci.aci_epg_to_domain:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      ap: "{{applicationPolicy}}"
+      epg: "{{defaultEPG}}"
+      domain: "{{vSphereDomain}}"
+      domain_type: vmm
+      vm_provider: vmware
+      resolution_immediacy: pre-provision
+      state: present
+      validate_certs: False
+    delegate_to: localhost
+
+  # start vRouter Networking
+
+  # create L3 domain
+  - name: "Create L3out domain for customer {{customerId}}"
+    delegate_to: localhost
+    cisco.aci.aci_domain:
+      validate_certs: False
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      domain: "{{vRtrL3Domain}}"
+      domain_type: l3dom
+      state: present
+
+  - name: "Assign VLAN pool to L3out domain for customer {{customerId}}"
+    delegate_to: localhost
+    cisco.aci.aci_domain_to_vlan_pool:
+      validate_certs: False
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      domain: "{{vRtrL3Domain}}"
+      domain_type: l3dom
+      pool: "{{vRtrVlanPool}}"
+      pool_allocation_mode: "{{vRtrVlanPoolMode}}"
+      state: present
+
+  - name: "Assign AAEP  to L3out domain for customer {{customerId}}"
+    delegate_to: localhost
+    cisco.aci.aci_aep_to_domain:
+      validate_certs: False
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      domain: "{{vRtrL3Domain}}"
+      domain_type: l3dom
+      aep: "{{vRtrAAEP}}"
+      state: present
+
+  - name: "Set vars for create floating L3out"
+    set_fact:
+      J2tenant: "{{customersTenant}}"
+      J2l3outName: "{{vRtrIntL3OutName}}"
+      J2l3outNetwork: "{{vRtrIntL3OutNetwork}}"
+      J2anchorPath: "{{vRtrIntAnchorPath}}"
+      J2routerIp: "{{vRtrIntL3OutIp}}"
+      J2routerIpMask: "{{vRtrIntMask}}"
+      J2vlan: "{{vRtrIntVLAN}}"
+      J2vrf: "{{vrf}}"
+      J2l3domain: "{{vRtrL3Domain}}"
+      J2vmmDomain: "{{vSphereDomain}}"
+      J2rtrId: "{{vRtrId}}"
+      J2floatingIp: "{{vRtrIntL3OutFloatingIp}}"
+
+  - name: "Create Floating L3Out"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/tn-{{customersTenant}}/out-{{vRtrIntL3OutName}}.json
+      content: "{{ lookup('template', 'create-floating-l3out.j2') }}"
+
+  # vRtrIntAnchorPath has format "topology/pod-1/node-101" and we need to parse it
+  - name: "Create default route on L3Out for customers VRF {{vrf}}"
+    delegate_to: localhost
+    cisco.aci.aci_l3out_static_routes:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      l3out: "{{vRtrIntL3OutName}}"
+      logical_node: "{{vRtrIntL3OutName}}_nodeProfile"
+      pod_id: "{{vRtrIntAnchorPath | regex_replace('^(?P<prefix>.+)pod-(?P<podId>.+)/node-(?P<nodeId>.+)$', '\\g<podId>')}}"
+      node_id: "{{vRtrIntAnchorPath | regex_replace('^(?P<prefix>.+)pod-(?P<podId>.+)/node-(?P<nodeId>.+)$', '\\g<nodeId>')}}"
+      prefix: 0.0.0.0/0
+  
+  - name: "Set vars for add next hop to default route"
+    set_fact:
+      J2tenant: "{{customersTenant}}"
+      J2l3outName: "{{vRtrIntL3OutName}}"
+      J2l3outNetwork: "{{vRtrIntL3OutNetwork}}"
+      J2prefix: "0.0.0.0/0"
+      J2nextHop: "{{vRtrIntL3OutAnycastIp}}"
+      J2anchorPath: "{{vRtrIntAnchorPath}}"
+
+  - name: "Add next hop to route"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/tn-{{customersTenant}}/out-{{vRtrIntL3OutName}}/lnodep-{{vRtrIntL3OutName}}_nodeProfile/rsnodeL3OutAtt-[{{vRtrIntAnchorPath}}]/rt-[{{J2prefix}}].json
+      content: "{{ lookup('template', 'add-next-hop-to-static-route.j2') }}"
+
+
+  # Contract between default EPG to L3Out
+  - name: "Create contract for use between L3Out and {{defaultEPG}}"
+    delegate_to: localhost
+    cisco.aci.aci_contract:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      contract: "{{vRtrContract}}"
+      scope: context
+      description: "Access to vRTR L3Out for customer {{customerId}}"
+      state: present
+
+  - name: "Create Contract Subject for vRTR "
+    delegate_to: localhost
+    cisco.aci.aci_contract_subject:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      contract: "{{vRtrContract}}"
+      subject: "L3Out"
+      reverse_filter: yes
+      description: "L3Out to vRTR for customer {{customerId}}"
+      state: present
+
+  - name: "Create {{vRtrFilter}} Filter"
+    delegate_to: localhost
+    cisco.aci.aci_filter:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      filter: "{{vRtrFilter}}"
+      description: "PBR to vRTR filter"
+      state: present
+
+  - name: "Create {{vRtrFilter}} Filter Entry"
+    delegate_to: localhost
+    cisco.aci.aci_filter_entry:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      filter: "{{vRtrFilter}}"
+      entry: "vRtrFilterEntry"
+      description: "PBR to vRTR filter"
+      state: present
+
+  - name: "Bind Filter to Subject for vRTR L3Out Contract"
+    delegate_to: localhost
+    cisco.aci.aci_contract_subject_to_filter:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      contract: "{{vRtrContract}}"
+      subject: "L3Out"
+      filter: "{{vRtrFilter}}"
+      state: present
+
+  - name: "Bind Contract {{vRtrContract}} to Consumer {{defaultEPG}}"
+    delegate_to: localhost
+    cisco.aci.aci_epg_to_contract:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      ap: "{{applicationPolicy}}"
+      epg: "{{defaultEPG}}"
+      contract: "{{vRtrContract}}"
+      contract_type: consumer
+      state: present
+
+  - name: "Bind Contract {{vRtrContract}} to Provider {{vRtrIntL3OutNetwork}}"
+    delegate_to: localhost
+    cisco.aci.aci_l3out_extepg_to_contract:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{customersTenant}}"
+      l3out: "{{vRtrIntL3OutName}}"
+      extepg: "{{vRtrIntL3OutNetwork}}"
+      contract: "{{vRtrContract}}"
+      contract_type: provider
+      state: present
+
+

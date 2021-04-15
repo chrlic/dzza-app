@@ -1,0 +1,89 @@
+- hosts: aci
+  gather_facts: no
+
+  tasks:
+  # setup uplinks for management to the HX domain
+  - name: "Delete Uplink {{mgmtStatic1}} to {{mgmtTenant}}/{{mgmtAP}}/{{mgmtEPG}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: "{{mgmtTenant}}"
+      ap: "{{mgmtAP}}"
+      epg: "{{mgmtEPG}}"
+      encap_id: "{{mgmtVLAN}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      leafs: "{{mgmtStatic1Leaf}}"
+      pod_id: "{{mgmtStatic1Pod}}"
+      interface: "{{mgmtStatic1}}"
+      state: absent
+
+  - name: "Delete Uplink {{mgmtStatic2}} to {{mgmtTenant}}/{{mgmtAP}}/{{mgmtEPG}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: "{{mgmtTenant}}"
+      ap: "{{mgmtAP}}"
+      epg: "{{mgmtEPG}}"
+      encap_id: "{{mgmtVLAN}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      interface: "{{mgmtStatic2}}"
+      leafs: "{{mgmtStatic2Leaf}}"
+      pod_id: "{{mgmtStatic2Pod}}"
+      state: absent
+
+  # setup virtual networking - vmm domain, aaep association, vcenter controller
+  - name: "Delete vCenter controller {{vmmName}} to VMM DVS switch {{vmmSwitchName}}"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: delete
+      path: /api/node/mo/uni/vmmp-VMware/dom-{{vmmSwitchName}}.json
+
+  - name: "Delete VMM DVS switch {{vmmSwitchName}} association to AAEP"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/infra/attentp-{{vmmAAEP}}/rsdomP-[uni/vmmp-VMware/dom-{{vmmSwitchName}}].json
+      content: 
+        {
+          "infraRsDomP":{
+            "attributes":{
+              "dn":"uni/infra/attentp-{{vmmAAEP}}/rsdomP-[uni/vmmp-VMware/dom-{{vmmSwitchName}}]",
+              "status":"deleted"
+            },
+            "children":[]
+          }
+        }
+
+
+
+  # setup tenant for HX and basic networking
+  - name: "Add a Event Tenant {{evtTenant}}"
+    cisco.aci.aci_tenant:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{evtTenant}}"
+      description: "{{evtTenant}} created via Ansible"
+      validate_certs: False
+      state: absent

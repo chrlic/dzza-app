@@ -1,0 +1,172 @@
+- hosts: aci
+  gather_facts: no
+
+  tasks:
+  # setup uplinks for management to the HX domain
+  - name: "Add Uplink {{mgmtStatic1}} to {{mgmtTenant}}/{{mgmtAP}}/{{mgmtEPG}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: "{{mgmtTenant}}"
+      ap: "{{mgmtAP}}"
+      epg: "{{mgmtEPG}}"
+      encap_id: "{{mgmtVLAN}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      leafs: "{{mgmtStatic1Leaf}}"
+      pod_id: "{{mgmtStatic1Pod}}"
+      interface: "{{mgmtStatic1}}"
+      state: present
+
+  - name: "Add Uplink {{mgmtStatic2}} to {{mgmtTenant}}/{{mgmtAP}}/{{mgmtEPG}}"
+    cisco.aci.aci_static_binding_to_epg:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: "{{mgmtTenant}}"
+      ap: "{{mgmtAP}}"
+      epg: "{{mgmtEPG}}"
+      encap_id: "{{mgmtVLAN}}"
+      deploy_immediacy: lazy
+      interface_mode: trunk
+      interface_type: vpc
+      interface: "{{mgmtStatic2}}"
+      leafs: "{{mgmtStatic2Leaf}}"
+      pod_id: "{{mgmtStatic2Pod}}"
+      state: present
+
+  # setup virtual networking - vmm domain, aaep association, vcenter controller
+  - name: "Add VMM DVS switch {{vmmSwitchName}}"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/vmmp-VMware/dom-{{vmmSwitchName}}.json
+      content: "{{ lookup('template', 'j2/vcenter_vmm.j2') }}"
+
+  - name: "Add VMM DVS switch {{vmmSwitchName}} AAEP association"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/infra/attentp-{{vmmAAEP}}.json
+      content: "{{ lookup('template', 'j2/vcenter_aaep.j2') }}"
+
+  - name: "Add vCenter controller {{vmmName}} to VMM DVS switch {{vmmSwitchName}}"
+    delegate_to: localhost
+    cisco.aci.aci_rest:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      validate_certs: False
+      username: "{{user}}"
+      password: "{{password}}"
+      method: post
+      path: /api/node/mo/uni/vmmp-VMware/dom-{{vmmSwitchName}}/ctrlr-{{vmmName}}.json
+      content: "{{ lookup('template', 'j2/vcenter_controller.j2') }}"
+
+
+  # setup tenant for HX and basic networking
+  - name: "Add a Event Tenant {{evtTenant}}"
+    cisco.aci.aci_tenant:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      tenant: "{{evtTenant}}"
+      description: "{{evtTenant}} created via Ansible"
+      validate_certs: False
+      state: present
+
+  - name: Add a new VRF to a tenant
+    cisco.aci.aci_vrf:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: "{{evtTenant}}"
+      vrf: "{{evtVRF}}"
+      descr: "{{evtVRF}} VRF"
+      policy_control_preference: enforced
+      policy_control_direction: ingress
+      state: present
+
+  - name: "Create Storage networking, uplinks, etc."
+    import_tasks: aci_hx_uplink.yml
+    vars:
+      i_apic: "{{apic}}"
+      i_port: "{{port}}"
+      i_user: "{{user}}"
+      i_password: "{{password}}"
+      i_tenant: "{{evtTenant}}"
+      i_vrf: "{{evtVRF}}"
+      i_bd: "{{evtStorageBD}}"
+      i_ap: "{{evtAP}}"
+      i_epg: "{{evtStorageEPG}}"
+      i_physDom: "{{evtPhysDomain}}"
+      i_virtDom: "{{vmmSwitchName}}"
+      i_vlan: "{{evtStorageVLAN}}"
+      i_leaf1: "{{evtStaticHX1Leaf}}"
+      i_pod1: "{{evtStaticHX1Pod}}"
+      i_interface1: "{{evtStaticHX1}}"
+      i_leaf2: "{{evtStaticHX2Leaf}}"
+      i_pod2: "{{evtStaticHX2Pod}}"
+      i_interface2: "{{evtStaticHX2}}"
+
+  - name: "Create vMotion networking, uplinks, etc."
+    import_tasks: aci_hx_uplink.yml
+    vars:
+      i_apic: "{{apic}}"
+      i_port: "{{port}}"
+      i_user: "{{user}}"
+      i_password: "{{password}}"
+      i_tenant: "{{evtTenant}}"
+      i_vrf: "{{evtVRF}}"
+      i_bd: "{{evtVMotionBD}}"
+      i_ap: "{{evtAP}}"
+      i_epg: "{{evtVMotionEPG}}"
+      i_physDom: "{{evtPhysDomain}}"
+      i_virtDom: "{{vmmSwitchName}}"
+      i_vlan: "{{evtVMotionVLAN}}"
+      i_leaf1: "{{evtStaticHX1Leaf}}"
+      i_pod1: "{{evtStaticHX1Pod}}"
+      i_interface1: "{{evtStaticHX1}}"
+      i_leaf2: "{{evtStaticHX2Leaf}}"
+      i_pod2: "{{evtStaticHX2Pod}}"
+      i_interface2: "{{evtStaticHX2}}"
+
+  - name: "Create App networking, uplinks, etc."
+    import_tasks: aci_hx_uplink.yml
+    vars:
+      i_apic: "{{apic}}"
+      i_port: "{{port}}"
+      i_user: "{{user}}"
+      i_password: "{{password}}"
+      i_tenant: "{{evtTenant}}"
+      i_vrf: "{{evtVRF}}"
+      i_bd: "{{evtAppBD}}"
+      i_ap: "{{evtAP}}"
+      i_epg: "{{evtAppEPG}}"
+      i_physDom: "{{evtPhysDomain}}"
+      i_virtDom: "{{vmmSwitchName}}"
+      i_vlan: "{{evtAppVLAN}}"
+      i_leaf1: "{{evtStaticHX1Leaf}}"
+      i_pod1: "{{evtStaticHX1Pod}}"
+      i_interface1: "{{evtStaticHX1}}"
+      i_leaf2: "{{evtStaticHX2Leaf}}"
+      i_pod2: "{{evtStaticHX2Pod}}"
+      i_interface2: "{{evtStaticHX2}}"
