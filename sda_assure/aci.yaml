@@ -1,0 +1,33 @@
+- hosts: aci
+  gather_facts: no
+
+  tasks:
+  - name: "House Contract"
+    cisco.aci.aci_l3out_extepg_to_contract:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: common
+      l3out: L3OUT_Demo
+      extepg : HC_External_SGT
+      contract: HC_External_SGT_to_House
+      contract_type: provider
+      state: present
+
+  - name: "Sova Contract"
+    cisco.aci.aci_l3out_extepg_to_contract:
+      hostname: "{{apic}}"
+      port: "{{port}}"
+      username: "{{user}}"
+      password: "{{password}}"
+      validate_certs: False
+      tenant: common
+      l3out: L3OUT_Demo
+      extepg : HC_Physicians_SGT
+      contract: HC_Physicians_SGT_to_Sova
+      contract_type: provider
+      state: present
+
+  

@@ -29,6 +29,7 @@ data "vsphere_virtual_machine" "mysql_template" {
 
 resource "vsphere_virtual_machine" "mysql_vm" {
   name             = var.vsphere.mysql_vm_name
+  folder           = var.vsphere.target_folder
   resource_pool_id = data.vsphere_compute_cluster.cluster.resource_pool_id
   datastore_id     = data.vsphere_datastore.datastore.id
   firmware         = data.vsphere_virtual_machine.mysql_template.firmware
@@ -83,6 +84,7 @@ data "vsphere_virtual_machine" "mongodb_template" {
 
 resource "vsphere_virtual_machine" "mongodb_vm" {
   name             = var.vsphere.mongodb_vm_name
+  folder           = var.vsphere.target_folder
   resource_pool_id = data.vsphere_compute_cluster.cluster.resource_pool_id
   datastore_id     = data.vsphere_datastore.datastore.id
   firmware         = data.vsphere_virtual_machine.mongodb_template.firmware

@@ -1,0 +1,34 @@
+- hosts: aci
+  gather_facts: no
+
+  tasks:
+  - name: "Read vlan definition file"
+    community.general.read_csv:
+      path: vlans.csv
+      fieldnames: tenant,vrf,vlan_id,subnet,ap
+      delimiter: ','
+    register: vlans
+    delegate_to: localhost
+
+  - name: "Printout"
+    ansible.builtin.debug:
+      var: vlans
+
+  - name: "Create all vlans"
+    include_tasks: one_vlan.yml
+    vars:
+      i_apic: "{{apic}}"
+      i_port: "{{port}}"
+      i_user: "{{user}}"
+      i_password: "{{password}}"
+      i_tenant: "{{item.tenant}}"
+      i_vrf: "{{item.vrf}}"
+      i_bd: "{{bd_prefix}}{{item.vlan_id}}"
+      i_subnet: "{{item.subnet}}"
+      i_ap: "{{item.ap}}"
+      i_vlan: "{{item.vlan_id}}"
+      i_epg: "{{epg_prefix}}{{item.vlan_id}}"
+      i_domain: "{{phys_domain}}"
+    loop: "{{vlans.list}}"
+
+  

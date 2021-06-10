@@ -13,9 +13,9 @@ aci = {
   db_epg = "databases"
   app_profile = "DZZA_demo_app"
 
-  k8s_cluster_tenant = "CCC-MD"
-  k8s_cluster_ap = "CCC50"
-  k8s_cluster_epg = "CCC-MGMT"
+  k8s_cluster_tenant = "Den_ze_zivota_aplikace_reloaded"
+  k8s_cluster_ap = "Hyperflex_event"
+  k8s_cluster_epg = "K8s-EPG"
   }
 
 vsphere = {
@@ -27,7 +27,7 @@ vsphere = {
 
   ip_subnet_prefix = "10.133.30"
   ip_subnet_mask = 24
-  target_folder = "DZZA/VMs"
+  target_folder = "demoApp"
   mysql_template = "CentOS8-MySQL-Template"
   mysql_vm_name = "MySQL"
   mysql_vm_domain = "dzza.demo.local"

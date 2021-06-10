@@ -1,0 +1,85 @@
+
+  - name: "Ensure Tenant {{i_tenant}} exists"
+    cisco.aci.aci_tenant:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      state: present
+
+  - name: "Ensure VRF {{i_vrf}}"
+    cisco.aci.aci_vrf:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      vrf: "{{i_vrf}}"
+      state: present
+
+  - name: "Add Bridge Domain {{i_bd}}"
+    cisco.aci.aci_bd:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      bd: "{{i_bd}}"
+      vrf: "{{i_vrf}}"
+      state: present
+
+  - name: "Add subnet {{i_subnet}}"
+    cisco.aci.aci_bd_subnet:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      bd: "{{i_bd}}"
+      gateway: "{{i_subnet.split('/')[0]}}"
+      mask: "{{i_subnet.split('/')[1]}}"
+      state: present
+
+  - name: "Ensure AP exists {{i_ap}}"
+    cisco.aci.aci_ap:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      state: present
+
+  - name: "Add EPG {{i_epg}} for VLAN {{i_vlan}}"
+    cisco.aci.aci_epg:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      state: present
+
+  - name: "Add EPG to Domain"
+    cisco.aci.aci_epg_to_domain:
+      hostname: "{{i_apic}}"
+      port: "{{i_port}}"
+      username: "{{i_user}}"
+      password: "{{i_password}}"
+      validate_certs: False
+      tenant: "{{i_tenant}}"
+      ap: "{{i_ap}}"
+      epg: "{{i_epg}}"
+      domain: "{{i_domain}}"
+      domain_type: phys
+      state: present
+
+       

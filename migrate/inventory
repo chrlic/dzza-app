@@ -1,0 +1,13 @@
+[aci]
+localhost ansible_connection=local
+
+[aci:vars]
+apic=192.168.130.10
+port=443
+user=admin
+password=Passw0rd.
+
+bd_prefix=vlan_bd_
+epg_prefix=vlan_epg_
+
+phys_domain=UCS
