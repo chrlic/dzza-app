@@ -43,14 +43,6 @@ resource "aci_epg_to_domain" "vmm_domain_to_epg" {
   vmm_mac_changes       = "accept"
 }
 
-#resource "aci_epg_to_domain" "phys_domain_to_epg" {
-#  application_epg_dn    = aci_application_epg.database_epg.id
-#  tdn                   = "uni/phys-${var.aci.phys_domain}"
-#  vmm_allow_promiscuous = "accept"
-#  vmm_forged_transmits  = "reject"
-#  vmm_mac_changes       = "accept"
-#}
-
 resource "aci_contract" "database_access_to" {
   tenant_dn   = aci_tenant.application_vm_tenant.id
   name        = "database_contract_to"

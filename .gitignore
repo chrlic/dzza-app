@@ -34,3 +34,6 @@ terraform/appd/terraform.tfstate
 terraform/appd/terraform.tfstate.backup
 terraform/appd/docker-creds.sh
 terraform/demo1/secrets.json
+terraform/demo1/terraform.tfstate
+terraform/demo1/terraform.tfstate.backup
+.gitignore
